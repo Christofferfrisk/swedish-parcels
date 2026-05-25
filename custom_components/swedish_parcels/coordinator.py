@@ -54,7 +54,18 @@ class SwedishParcelsCoordinator(DataUpdateCoordinator[dict[str, Parcel]]):
             await self.hass.async_add_executor_job(self._refresh_live_sync)
         except Exception as e:
             raise UpdateFailed(str(e)) from e
-        return {p.key: p for p in self._store.all()}
+        # Only surface parcels with something meaningful to show — skips
+        # marketing/feedback noise that would otherwise become 'unknown'
+        # state entities.
+        return {p.key: p for p in self._store.all() if _has_signal(p)}
+
+
+def _has_signal(p: Parcel) -> bool:
+    if p.tracking_number or p.status:
+        return True
+    if p.records and p.records[0].order_ref:
+        return True
+    return False
 
     def _fetch_and_parse_sync(self) -> None:
         opts = {**self.entry.data, **self.entry.options}

@@ -1,7 +1,7 @@
 {
   "domain": "swedish_parcels",
   "name": "Swedish Parcels",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "documentation": "https://github.com/Christofferfrisk/swedish-parcels",
   "issue_tracker": "https://github.com/Christofferfrisk/swedish-parcels/issues",
   "codeowners": ["@Christofferfrisk"],

@@ -55,13 +55,18 @@ class ParcelSensor(CoordinatorEntity[SwedishParcelsCoordinator], SensorEntity):
         p = self._parcel
         if p is None:
             return self._key
-        if p.sender_name and p.tracking_number:
-            return f"{p.sender_name} {p.tracking_number}"
+        product = p.products[0] if p.products else None
+        product_short = _shorten(product, 50) if product else None
+        order_ref = p.records[0].order_ref if p.records else None
+        sender = p.sender_name or p.carrier.capitalize()
+
+        if product_short:
+            return f"{sender}: {product_short}"
         if p.tracking_number:
-            return f"{p.carrier} {p.tracking_number}"
-        if p.sender_name:
-            return f"{p.sender_name} parcel"
-        return p.key
+            return f"{sender} {p.tracking_number}"
+        if order_ref:
+            return f"{sender} order {order_ref}"
+        return f"{sender} parcel"
 
     @property
     def native_value(self) -> str | None:
@@ -91,3 +96,8 @@ class ParcelSensor(CoordinatorEntity[SwedishParcelsCoordinator], SensorEntity):
             if p.live.eta_estimate:
                 attrs["live_eta_estimate"] = p.live.eta_estimate.isoformat()
         return {k: v for k, v in attrs.items() if v not in (None, [], "")}
+
+
+def _shorten(s: str, n: int) -> str:
+    s = s.strip()
+    return s if len(s) <= n else s[: n - 1].rstrip() + "…"
