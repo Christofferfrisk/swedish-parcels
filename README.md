@@ -40,8 +40,29 @@ uv run pytest
 ## Status
 
 Parsers: Bring, Amazon, Airmee, Zalando (email-driven).
-Tracker: Airmee live tracker scaffolded — needs browser-captured auth headers (see below).
+Tracker: Airmee live tracker (needs your `phone_number_hash`, see below).
 Store: dedup + Airmee↔Amazon time-window linker.
+HA integration: scaffolded under `custom_components/swedish_parcels/`, HACS-ready.
+
+## Install in Home Assistant via HACS
+
+1. HACS → ⋮ → Custom repositories → add this repo as type **Integration**.
+2. Install **Swedish Parcels** from the HACS integration list.
+3. Restart Home Assistant.
+4. Settings → Devices & Services → Add Integration → **Swedish Parcels**.
+5. Fill in IMAP credentials and (optional) your Airmee `phone_number_hash`.
+
+The integration creates one sensor per open parcel, with attributes for
+tracking URL, ETA, sender, products, and (for Airmee) live courier name +
+dropoff address.
+
+## CLI tools
+
+```powershell
+uv run parse-eml <file.eml>                 # parse one email, print Shipment
+uv run parse-eml --live <file.eml>          # also call live tracker if configured
+uv run parse-folder --open-only fixtures    # deduped+linked Parcel view of a folder
+```
 
 ## Open user actions
 

@@ -1,0 +1,13 @@
+{
+  "domain": "swedish_parcels",
+  "name": "Swedish Parcels",
+  "version": "0.1.0",
+  "documentation": "https://github.com/chrfr742/swedish-parcels",
+  "issue_tracker": "https://github.com/chrfr742/swedish-parcels/issues",
+  "codeowners": ["@chrfr742"],
+  "iot_class": "cloud_polling",
+  "config_flow": true,
+  "requirements": ["httpx>=0.27"],
+  "dependencies": [],
+  "integration_type": "service"
+}

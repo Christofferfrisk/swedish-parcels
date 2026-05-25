@@ -46,8 +46,10 @@ class Parcel:
     def status(self) -> str | None:
         if self.live and self.live.status:
             return self.live.status
-        latest = self._latest_record()
-        return latest.status if latest else None
+        for r in self._records_newest_first():
+            if r.status:
+                return r.status
+        return None
 
     @property
     def eta(self) -> datetime | None:
@@ -55,10 +57,17 @@ class Parcel:
             return self.live.eta_latest or self.live.eta_earliest
         if self.linked_retailer and self.linked_retailer.eta:
             return self.linked_retailer.eta
-        for r in reversed(self.records):
+        for r in self._records_newest_first():
             if r.eta:
                 return r.eta
         return None
+
+    def _records_newest_first(self) -> list[Shipment]:
+        # Sort by received_at desc, records without a date go last.
+        with_date = [r for r in self.records if r.received_at is not None]
+        without = [r for r in self.records if r.received_at is None]
+        with_date.sort(key=lambda r: r.received_at, reverse=True)  # type: ignore[arg-type, return-value]
+        return with_date + without
 
     @property
     def sender_name(self) -> str | None:

@@ -20,6 +20,7 @@ dev = [
 
 [project.scripts]
 parse-eml = "swedish_parcels.cli:main"
+parse-folder = "swedish_parcels.folder_cli:main"
 
 [build-system]
 requires = ["hatchling"]

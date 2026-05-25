@@ -1,0 +1,35 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Swedish Parcels",
+        "description": "Connect to your inbox to track parcel deliveries.",
+        "data": {
+          "imap_host": "IMAP host",
+          "imap_port": "IMAP port",
+          "imap_user": "Email address",
+          "imap_password": "App-specific password",
+          "imap_mailbox": "Mailbox",
+          "parcel_senders": "Comma-separated sender domains to fetch",
+          "airmee_phone_hash": "Airmee phone_number_hash (optional, for live tracking)",
+          "scan_interval_min": "Refresh interval (minutes)"
+        }
+      }
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Swedish Parcels options",
+        "data": {
+          "parcel_senders": "Sender domains",
+          "airmee_phone_hash": "Airmee phone_number_hash",
+          "scan_interval_min": "Refresh interval (minutes)"
+        }
+      }
+    }
+  }
+}
