@@ -4,41 +4,25 @@ from datetime import datetime, timezone
 
 import pytest
 
-from swedish_parcels.trackers.airmee import (
-    AirmeeTracker,
-    AirmeeTrackerAuthError,
-    _from_airmee_payload,
-)
+from swedish_parcels.trackers.airmee import AirmeeTracker, _from_payload
 
-
-def test_payload_mapping_minimal() -> None:
-    payload = {
-        "trackStatus": "ON_ROUTE",
-        "dropoff": {
-            "eta": {
-                "earliest": "2026-05-25T14:00:00Z",
-                "latest": "2026-05-25T16:00:00Z",
-            }
-        },
-    }
-    ls = _from_airmee_payload(payload, "7A242B")
-    assert ls.carrier == "airmee"
-    assert ls.tracking_number == "7A242B"
-    assert ls.status == "out_for_delivery"
-    assert ls.eta_earliest == datetime(2026, 5, 25, 14, 0, tzinfo=timezone.utc)
-    assert ls.eta_latest == datetime(2026, 5, 25, 16, 0, tzinfo=timezone.utc)
-
-
-def test_payload_mapping_unknown_status_falls_back_to_lowercased() -> None:
-    ls = _from_airmee_payload({"trackStatus": "WONKY"}, "X")
-    assert ls.status == "wonky"
-
-
-def test_payload_mapping_missing_eta_is_none() -> None:
-    ls = _from_airmee_payload({"trackStatus": "DELIVERED"}, "X")
-    assert ls.status == "delivered"
-    assert ls.eta_earliest is None
-    assert ls.eta_latest is None
+SAMPLE_PAYLOAD = {
+    "order_details": [
+        {
+            "sender_name": "Amazon",
+            "courier_status_formatted": "Delivered",
+            "courier_full_name": "Talha",
+            "dropoff_place_address": "Svärmgatan 7, UPPSALA 75255, Sweden",
+            "pickup_earliest_time": "1779544800",
+            "pickup_latest_time": "1779546600",
+            "dropoff_earliest_time": "1779548400",
+            "dropoff_latest_time": "1779566400",
+            "dropoff_eta": "1779560450",
+            "latitude_of_courier": None,
+            "longitude_of_courier": None,
+        }
+    ]
+}
 
 
 class _StubResponse:
@@ -52,25 +36,60 @@ class _StubResponse:
         return self._body
 
 
-def test_fetch_without_auth_raises_descriptive_error(monkeypatch) -> None:
+def test_constructor_requires_phone_hash(monkeypatch) -> None:
+    monkeypatch.delenv("AIRMEE_PHONE_HASH", raising=False)
+    with pytest.raises(ValueError):
+        AirmeeTracker()
+
+
+def test_constructor_picks_up_env(monkeypatch) -> None:
+    monkeypatch.setenv("AIRMEE_PHONE_HASH", "abc123")
+    t = AirmeeTracker()
+    assert t._hash == "abc123"
+
+
+def test_payload_maps_delivered() -> None:
+    ls = _from_payload(SAMPLE_PAYLOAD, "7A242B")
+    assert ls is not None
+    assert ls.carrier == "airmee"
+    assert ls.tracking_number == "7A242B"
+    assert ls.status == "delivered"
+    assert ls.courier_name == "Talha"
+    assert "UPPSALA" in (ls.dropoff_address or "")
+
+
+def test_payload_timestamps_converted() -> None:
+    ls = _from_payload(SAMPLE_PAYLOAD, "7A242B")
+    assert ls is not None
+    assert ls.eta_earliest == datetime.fromtimestamp(1779548400, tz=timezone.utc)
+    assert ls.eta_latest == datetime.fromtimestamp(1779566400, tz=timezone.utc)
+    assert ls.eta_estimate == datetime.fromtimestamp(1779560450, tz=timezone.utc)
+
+
+def test_payload_unknown_status_normalised() -> None:
+    payload = {"order_details": [{"courier_status_formatted": "Some New State"}]}
+    ls = _from_payload(payload, "X")
+    assert ls is not None
+    assert ls.status == "some_new_state"
+
+
+def test_payload_empty_orders_returns_none() -> None:
+    assert _from_payload({"order_details": []}, "X") is None
+
+
+def test_fetch_404_returns_none(monkeypatch) -> None:
     import swedish_parcels.trackers.airmee as mod
 
-    monkeypatch.setattr(mod.httpx, "get", lambda *a, **kw: _StubResponse(403))
-    with pytest.raises(AirmeeTrackerAuthError):
-        AirmeeTracker().fetch("7A242B")
+    monkeypatch.setenv("AIRMEE_PHONE_HASH", "x")
+    monkeypatch.setattr(mod.httpx, "get", lambda *a, **kw: _StubResponse(404))
+    assert AirmeeTracker().fetch("X") is None
 
 
-def test_fetch_with_auth_returns_livestatus(monkeypatch) -> None:
+def test_fetch_200_returns_livestatus(monkeypatch) -> None:
     import swedish_parcels.trackers.airmee as mod
 
-    payload = {
-        "trackStatus": "DELIVERED",
-        "dropoff": {"eta": {"earliest": "2026-05-25T10:00:00Z"}},
-    }
-    monkeypatch.setattr(mod.httpx, "get", lambda *a, **kw: _StubResponse(200, payload))
-
-    tracker = AirmeeTracker(extra_headers={"x-api-key": "fake"})
-    ls = tracker.fetch("7A242B")
+    monkeypatch.setenv("AIRMEE_PHONE_HASH", "x")
+    monkeypatch.setattr(mod.httpx, "get", lambda *a, **kw: _StubResponse(200, SAMPLE_PAYLOAD))
+    ls = AirmeeTracker().fetch("7A242B")
     assert ls is not None
     assert ls.status == "delivered"
-    assert ls.eta_earliest == datetime(2026, 5, 25, 10, 0, tzinfo=timezone.utc)

@@ -60,19 +60,27 @@ uv run python scripts/download_emails.py --since 2026-01-01 --limit 50
 Then re-run `uv run parse-eml fixtures/<carrier>/<file>.eml` on a few and
 check whether anything new shows up unmatched or with missing fields.
 
-### 2. Capture Airmee API auth header
+### 2. Capture your Airmee phone_number_hash (one-time)
 
-`trackers/airmee.py` knows the endpoint
-(`https://api.airmee.com/shipment-track/<token>`) and the response shape,
-but the API returns 403 from outside a browser. To finish the live tracker:
+The live tracker (`trackers/airmee.py`) hits
+`https://api.airmee.com/track/track_by_url`. It needs one query param:
+`phone_number_hash`, a 6-character hash of your phone number that the
+tracking SPA computes and stores. Same value works for every parcel
+addressed to you, forever — until your phone number changes.
 
-1. Open `https://tracking.airmee.com/sv/#/track/<token>` in Chrome with a
-   currently-active parcel.
-2. Open DevTools → Network. Reload.
-3. Find the GET to `api.airmee.com/shipment-track/<token>`.
-4. Right-click → Copy → Copy as cURL (bash).
-5. Paste here; we'll pull whichever header makes it work (likely
-   `x-api-key` or `authorization`) and pass it via `AirmeeTracker(extra_headers={...})`.
+To capture it:
+
+1. Open `https://tracking.airmee.com/sv/#/track/<token>` in Chrome.
+2. F12 → Network tab → tick "Preserve log".
+3. Reload the page.
+4. Find the `track_by_url` row in the list. The URL ends with
+   `?tracking_url=<token>&phone_number_hash=<HASH>` — copy the hash.
+5. Add to `.env`:
+   ```
+   AIRMEE_PHONE_HASH=<your-hash>
+   ```
+
+Then `AirmeeTracker()` reads it from env automatically.
 
 ## Out of scope (for v0.1)
 

@@ -12,6 +12,11 @@ class LiveStatus:
     status: str | None = None
     eta_earliest: datetime | None = None
     eta_latest: datetime | None = None
+    eta_estimate: datetime | None = None
+    courier_name: str | None = None
+    dropoff_address: str | None = None
+    courier_lat: float | None = None
+    courier_lon: float | None = None
     fetched_at: datetime | None = None
     raw: dict[str, object] = field(default_factory=dict)
 
