@@ -28,3 +28,6 @@ uv.lock
 .idea/
 *.swp
 .DS_Store
+
+# Local-only Claude Code conventions
+CLAUDE.md
