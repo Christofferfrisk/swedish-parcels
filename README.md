@@ -39,7 +39,40 @@ uv run pytest
 
 ## Status
 
-Early scaffolding. No parsers implemented yet.
+Parsers: Bring, Amazon, Airmee, Zalando (email-driven).
+Tracker: Airmee live tracker scaffolded — needs browser-captured auth headers (see below).
+Store: dedup + Airmee↔Amazon time-window linker.
+
+## Open user actions
+
+### 1. Harvest more fixtures from your inbox
+
+The parsers are designed against only 7 real emails so far. To stress-test
+them and discover the shape of "Skickad" / "Levererad" notifications, pull
+a wider sample:
+
+```powershell
+copy .env.example .env
+# edit .env: fill IMAP_HOST/USER/PASSWORD and PARCEL_SENDERS
+uv run python scripts/download_emails.py --since 2026-01-01 --limit 50
+```
+
+Then re-run `uv run parse-eml fixtures/<carrier>/<file>.eml` on a few and
+check whether anything new shows up unmatched or with missing fields.
+
+### 2. Capture Airmee API auth header
+
+`trackers/airmee.py` knows the endpoint
+(`https://api.airmee.com/shipment-track/<token>`) and the response shape,
+but the API returns 403 from outside a browser. To finish the live tracker:
+
+1. Open `https://tracking.airmee.com/sv/#/track/<token>` in Chrome with a
+   currently-active parcel.
+2. Open DevTools → Network. Reload.
+3. Find the GET to `api.airmee.com/shipment-track/<token>`.
+4. Right-click → Copy → Copy as cURL (bash).
+5. Paste here; we'll pull whichever header makes it work (likely
+   `x-api-key` or `authorization`) and pass it via `AirmeeTracker(extra_headers={...})`.
 
 ## Out of scope (for v0.1)
 

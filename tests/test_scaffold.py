@@ -9,7 +9,7 @@ def test_version() -> None:
 
 def test_registry_has_parsers() -> None:
     names = {p.name for p in REGISTRY}
-    assert {"bring", "amazon", "airmee"}.issubset(names)
+    assert {"bring", "amazon", "airmee", "zalando"}.issubset(names)
 
 
 def test_shipment_minimal() -> None:

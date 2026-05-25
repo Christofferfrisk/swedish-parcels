@@ -19,7 +19,7 @@ REGISTRY: list[Parser] = []
 
 
 def _load_all() -> None:
-    from swedish_parcels.parsers import airmee, amazon, bring  # noqa: F401
+    from swedish_parcels.parsers import airmee, amazon, bring, zalando  # noqa: F401
 
 
 _load_all()
