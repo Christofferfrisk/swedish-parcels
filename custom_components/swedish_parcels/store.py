@@ -134,6 +134,27 @@ class ShipmentStore:
     def find_by_tracking(self, carrier: str, tracking_number: str) -> Parcel | None:
         return self._parcels.get(_tracking_key(carrier, tracking_number))
 
+    def prune_delivered_older_than(self, now: datetime, max_age: timedelta) -> int:
+        """Drop parcels in a terminal state whose newest record is older than max_age.
+
+        Returns the number of parcels removed. Pass max_age=timedelta(0) to disable.
+        """
+        if max_age <= timedelta(0):
+            return 0
+        cutoff = now - max_age
+        to_drop = []
+        for key, parcel in self._parcels.items():
+            if parcel.status not in _TERMINAL_STATES:
+                continue
+            latest = parcel._latest_record()
+            if latest is None or latest.received_at is None:
+                continue
+            if latest.received_at < cutoff:
+                to_drop.append(key)
+        for key in to_drop:
+            del self._parcels[key]
+        return len(to_drop)
+
     def _key_for(self, s: Shipment) -> str:
         if s.tracking_number:
             return _tracking_key(s.carrier, s.tracking_number)

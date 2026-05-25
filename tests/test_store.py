@@ -178,3 +178,35 @@ def test_find_by_tracking() -> None:
     store.add(Shipment(carrier="bring", tracking_number="ABC", received_at=_at(2026, 5, 1)))
     assert store.find_by_tracking("bring", "ABC") is not None
     assert store.find_by_tracking("bring", "ZZZ") is None
+
+
+def test_prune_delivered_older_than_drops_old_delivered() -> None:
+    from datetime import timedelta
+
+    store = ShipmentStore()
+    store.add(Shipment(carrier="bring", tracking_number="OLD", status="delivered", received_at=_at(2026, 5, 1)))
+    store.add(Shipment(carrier="bring", tracking_number="RECENT", status="delivered", received_at=_at(2026, 5, 20)))
+    store.add(Shipment(carrier="bring", tracking_number="OPEN", status="in_transit", received_at=_at(2026, 5, 1)))
+
+    dropped = store.prune_delivered_older_than(_at(2026, 5, 25), timedelta(days=7))
+    assert dropped == 1
+    keys = {p.tracking_number for p in store.all()}
+    assert keys == {"RECENT", "OPEN"}
+
+
+def test_prune_with_zero_max_age_is_noop() -> None:
+    from datetime import timedelta
+
+    store = ShipmentStore()
+    store.add(Shipment(carrier="bring", tracking_number="OLD", status="delivered", received_at=_at(2026, 5, 1)))
+    assert store.prune_delivered_older_than(_at(2026, 5, 25), timedelta(0)) == 0
+    assert len(store.all()) == 1
+
+
+def test_prune_never_drops_in_flight_parcels() -> None:
+    from datetime import timedelta
+
+    store = ShipmentStore()
+    store.add(Shipment(carrier="bring", tracking_number="ANCIENT", status="in_transit", received_at=_at(2020, 1, 1)))
+    assert store.prune_delivered_older_than(_at(2026, 5, 25), timedelta(days=7)) == 0
+    assert len(store.all()) == 1

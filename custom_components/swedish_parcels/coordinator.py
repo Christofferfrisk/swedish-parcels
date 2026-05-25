@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import imaplib
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from email import policy
 from email.parser import BytesParser
 
@@ -24,10 +24,12 @@ from .const import (
     CONF_IMAP_USER,
     CONF_LOOKBACK_DAYS,
     CONF_PARCEL_SENDERS,
+    CONF_RETENTION_DAYS,
     CONF_SCAN_INTERVAL_MIN,
     DEFAULT_LOOKBACK_DAYS,
     DEFAULT_MAILBOX,
     DEFAULT_PORT,
+    DEFAULT_RETENTION_DAYS,
     DEFAULT_SCAN_INTERVAL_MIN,
 )
 
@@ -54,6 +56,15 @@ class SwedishParcelsCoordinator(DataUpdateCoordinator[dict[str, Parcel]]):
             await self.hass.async_add_executor_job(self._refresh_live_sync)
         except Exception as e:
             raise UpdateFailed(str(e)) from e
+
+        opts = {**self.entry.data, **self.entry.options}
+        retention = int(opts.get(CONF_RETENTION_DAYS, DEFAULT_RETENTION_DAYS))
+        dropped = self._store.prune_delivered_older_than(
+            datetime.now(timezone.utc), timedelta(days=retention)
+        )
+        if dropped:
+            _LOGGER.debug("Pruned %d delivered parcel(s) older than %d days", dropped, retention)
+
         # Only surface parcels with something meaningful to show — skips
         # marketing/feedback noise that would otherwise become 'unknown'
         # state entities.
