@@ -5,9 +5,9 @@ from datetime import datetime
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 
-from swedish_parcels.models import Shipment
-from swedish_parcels.parsers import REGISTRY
-from swedish_parcels.parsers.bring import _extract_body_text
+from ..models import Shipment
+from . import REGISTRY
+from .bring import _extract_body_text
 
 _AIRMEE_SHORTLINK_RE = re.compile(r"https?://airm\.ee/([A-Za-z0-9_\-]+)", re.IGNORECASE)
 _SENDER_RE = re.compile(r"fr[åa]n\s+([A-Za-zÅÄÖåäö0-9][A-Za-zÅÄÖåäö0-9_\-]*)")

@@ -5,9 +5,9 @@ from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 
-from swedish_parcels.models import Shipment
-from swedish_parcels.parsers import REGISTRY
-from swedish_parcels.parsers.bring import _extract_body_text
+from ..models import Shipment
+from . import REGISTRY
+from .bring import _extract_body_text
 
 _ORDER_RE = re.compile(r"\b(\d{3}-\d{7}-\d{7})\b")
 _ORDER_URL_RES = [

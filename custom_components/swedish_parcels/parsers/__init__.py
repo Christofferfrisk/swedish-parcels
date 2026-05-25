@@ -3,7 +3,7 @@ from __future__ import annotations
 from email.message import EmailMessage
 from typing import Protocol, runtime_checkable
 
-from swedish_parcels.models import Shipment
+from ..models import Shipment
 
 
 @runtime_checkable
@@ -19,7 +19,7 @@ REGISTRY: list[Parser] = []
 
 
 def _load_all() -> None:
-    from swedish_parcels.parsers import airmee, amazon, bring, zalando  # noqa: F401
+    from . import airmee, amazon, bring, zalando  # noqa: F401
 
 
 _load_all()

@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from typing import Iterator
 
-from swedish_parcels.models import Shipment
-from swedish_parcels.trackers import LiveStatus
+from .models import Shipment
+from .trackers import LiveStatus
 
 # Carriers that may deliver Amazon parcels in Sweden. When an Airmee record
 # names "Amazon" as sender, we try to link it to a recent Amazon order.

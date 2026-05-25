@@ -6,8 +6,8 @@ from email import policy
 from email.parser import BytesParser
 from pathlib import Path
 
-from swedish_parcels.parsers import REGISTRY
-from swedish_parcels.store import Parcel, ShipmentStore
+from .parsers import REGISTRY
+from .store import Parcel, ShipmentStore
 
 
 def main(argv: list[str] | None = None) -> int:

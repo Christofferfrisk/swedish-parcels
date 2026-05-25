@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 import httpx
 
-from swedish_parcels.trackers import LiveStatus
+from . import LiveStatus
 
 API_URL = "https://api.airmee.com/track/track_by_url"
 

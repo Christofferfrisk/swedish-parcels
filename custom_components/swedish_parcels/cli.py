@@ -9,8 +9,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from swedish_parcels.models import Shipment
-from swedish_parcels.parsers import REGISTRY
+from .models import Shipment
+from .parsers import REGISTRY
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,7 +65,7 @@ def _try_live_lookup(shipment: Shipment) -> tuple[object, str]:
         return None, f"no tracker for carrier {shipment.carrier!r}"
     if not os.environ.get("AIRMEE_PHONE_HASH"):
         return None, "AIRMEE_PHONE_HASH not set in env"
-    from swedish_parcels.trackers.airmee import AirmeeTracker
+    from .trackers.airmee import AirmeeTracker
 
     try:
         ls = AirmeeTracker().fetch(shipment.tracking_number)

@@ -4,8 +4,8 @@ import re
 from email.message import EmailMessage
 from email.utils import parsedate_to_datetime
 
-from swedish_parcels.models import Shipment
-from swedish_parcels.parsers import REGISTRY
+from ..models import Shipment
+from . import REGISTRY
 
 _TRACKING_URL_RE = re.compile(
     r"https?://(?:www\.)?(?:bring\.se/t/|tracking\.bring\.se/tracking/)(\d+)",
