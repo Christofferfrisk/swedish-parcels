@@ -11,9 +11,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from swedish_parcels.parsers import REGISTRY
-from swedish_parcels.store import Parcel, ShipmentStore
-from swedish_parcels.trackers.airmee import AirmeeTracker
+from .parsers import REGISTRY
+from .store import Parcel, ShipmentStore
+from .trackers.airmee import AirmeeTracker
 
 from .const import (
     CONF_AIRMEE_PHONE_HASH,
