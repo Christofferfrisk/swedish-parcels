@@ -10,10 +10,16 @@ from swedish_parcels.parsers import REGISTRY
 from swedish_parcels.parsers.bring import _extract_body_text
 
 _ORDER_RE = re.compile(r"\b(\d{3}-\d{7}-\d{7})\b")
-_ORDER_URL_RE = re.compile(
-    r"https?://www\.amazon\.[a-z.]+/your-orders/order-details\?[^\s)\"']+",
-    re.IGNORECASE,
-)
+_ORDER_URL_RES = [
+    re.compile(
+        r"https?://www\.amazon\.[a-z.]+/your-orders/order-details\?[^\s)\"']+",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"https?://www\.amazon\.[a-z.]+/progress-tracker/package\?[^\s)\"']+",
+        re.IGNORECASE,
+    ),
+]
 
 _WEEKDAYS = {
     "måndag": 0, "mandag": 0,
@@ -34,10 +40,14 @@ _ETA_TOMORROW_RE = re.compile(r"Kommer\s+imorgon\b", re.IGNORECASE)
 
 _PRODUCT_RE = re.compile(r"^\*\s+(.+?)$", re.MULTILINE)
 
+# Order matters: more specific rules first. Word boundaries prevent
+# "leverans" from accidentally matching the "leverera" family.
 _STATUS_RULES: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r"levererat|levererad", re.IGNORECASE), "delivered"),
-    (re.compile(r"har skickats|skickat|skickad", re.IGNORECASE), "shipped"),
-    (re.compile(r"best[äa]ll[dt]|beställningsbekr[äa]ft", re.IGNORECASE), "ordered"),
+    (re.compile(r"n[äa]rmaste ombud|uth[äa]mtnings|redo att h[äa]mta", re.IGNORECASE), "ready_for_pickup"),
+    (re.compile(r"leverans p[åa] v[äa]g|ute f[öo]r leverans|levereras\b", re.IGNORECASE), "out_for_delivery"),
+    (re.compile(r"\blevererat\b|\blevererad\b", re.IGNORECASE), "delivered"),
+    (re.compile(r"har skickats|\bskickat\b|\bskickad\b|\bskickade\b", re.IGNORECASE), "shipped"),
+    (re.compile(r"best[äa]ll[dt]|best[äa]llningsbekr[äa]ft", re.IGNORECASE), "ordered"),
 ]
 
 
@@ -54,7 +64,10 @@ class AmazonParser:
         received_at = _parse_date_header(msg.get("Date"))
 
         order_ref = _first_match(_ORDER_RE, body) or _first_match(_ORDER_RE, subject)
-        order_url = _first_full_match(_ORDER_URL_RE, body)
+        order_url = next(
+            (m.group(0) for pat in _ORDER_URL_RES for m in [pat.search(body or "")] if m),
+            None,
+        )
         eta, eta_precision = _extract_eta(body, anchor=received_at)
         products = tuple(_PRODUCT_RE.findall(body))
         status = _classify_status(subject) or _classify_status(body)

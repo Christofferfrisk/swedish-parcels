@@ -98,3 +98,34 @@ def test_received_at_matches_email_date(parser: AmazonParser) -> None:
 
 def test_sender_name_is_amazon(parser: AmazonParser) -> None:
     assert parser.parse(_load(ORDER_CONFIRMATION)).sender_name == "Amazon"
+
+
+SHIPPED = "d9886f176659_Skickade-TrendPlain-Oljesprayflaska....eml"
+OUT_FOR_DELIVERY = "f86f906bb777_Leverans-p-v-g-TrendPlain-Oljesprayflaska....eml"
+PICKUP_POINT = "c956a28fd1a0_Ditt-Amazon-paket-har-levererats-till-ditt-n-rmaste-ombud.eml"
+
+
+def test_shipped_email_classified_correctly(parser: AmazonParser) -> None:
+    assert parser.parse(_load(SHIPPED)).status == "shipped"
+
+
+def test_out_for_delivery_not_confused_with_delivered(parser: AmazonParser) -> None:
+    # Regression: "Leverans på väg" used to match the levererad rule.
+    assert parser.parse(_load(OUT_FOR_DELIVERY)).status == "out_for_delivery"
+
+
+def test_progress_tracker_url_extracted_as_order_url(parser: AmazonParser) -> None:
+    s = parser.parse(_load(SHIPPED))
+    assert s.order_url is not None
+    assert "/progress-tracker/package" in s.order_url
+    assert s.order_ref in s.order_url
+
+
+def test_lifecycle_emails_share_same_order_ref(parser: AmazonParser) -> None:
+    refs = {parser.parse(_load(f)).order_ref for f in (SHIPPED, OUT_FOR_DELIVERY)}
+    assert refs == {"171-2531747-9075534"}
+
+
+def test_pickup_point_email_classified_as_ready_for_pickup(parser: AmazonParser) -> None:
+    s = parser.parse(_load(PICKUP_POINT))
+    assert s.status == "ready_for_pickup"
