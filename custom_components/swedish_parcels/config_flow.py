@@ -13,8 +13,10 @@ from .const import (
     CONF_IMAP_PASSWORD,
     CONF_IMAP_PORT,
     CONF_IMAP_USER,
+    CONF_LOOKBACK_DAYS,
     CONF_PARCEL_SENDERS,
     CONF_SCAN_INTERVAL_MIN,
+    DEFAULT_LOOKBACK_DAYS,
     DEFAULT_MAILBOX,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL_MIN,
@@ -45,6 +47,7 @@ class SwedishParcelsConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_PARCEL_SENDERS, default=DEFAULT_SENDERS): str,
                 vol.Optional(CONF_AIRMEE_PHONE_HASH, default=""): str,
                 vol.Optional(CONF_SCAN_INTERVAL_MIN, default=DEFAULT_SCAN_INTERVAL_MIN): int,
+                vol.Optional(CONF_LOOKBACK_DAYS, default=DEFAULT_LOOKBACK_DAYS): int,
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema)
@@ -77,6 +80,10 @@ class SwedishParcelsOptionsFlow(OptionsFlow):
                 vol.Optional(
                     CONF_SCAN_INTERVAL_MIN,
                     default=current.get(CONF_SCAN_INTERVAL_MIN, DEFAULT_SCAN_INTERVAL_MIN),
+                ): int,
+                vol.Optional(
+                    CONF_LOOKBACK_DAYS,
+                    default=current.get(CONF_LOOKBACK_DAYS, DEFAULT_LOOKBACK_DAYS),
                 ): int,
             }
         )

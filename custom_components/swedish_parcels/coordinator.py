@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import imaplib
 import logging
-from datetime import timedelta
+from datetime import date, timedelta
 from email import policy
 from email.parser import BytesParser
 
@@ -22,8 +22,10 @@ from .const import (
     CONF_IMAP_PASSWORD,
     CONF_IMAP_PORT,
     CONF_IMAP_USER,
+    CONF_LOOKBACK_DAYS,
     CONF_PARCEL_SENDERS,
     CONF_SCAN_INTERVAL_MIN,
+    DEFAULT_LOOKBACK_DAYS,
     DEFAULT_MAILBOX,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL_MIN,
@@ -57,12 +59,15 @@ class SwedishParcelsCoordinator(DataUpdateCoordinator[dict[str, Parcel]]):
     def _fetch_and_parse_sync(self) -> None:
         opts = {**self.entry.data, **self.entry.options}
         senders = [s.strip() for s in opts[CONF_PARCEL_SENDERS].split(",") if s.strip()]
+        lookback = int(opts.get(CONF_LOOKBACK_DAYS, DEFAULT_LOOKBACK_DAYS))
+        since = (date.today() - timedelta(days=lookback)).strftime("%d-%b-%Y")
         conn = imaplib.IMAP4_SSL(opts[CONF_IMAP_HOST], int(opts.get(CONF_IMAP_PORT, DEFAULT_PORT)))
         conn.login(opts[CONF_IMAP_USER], opts[CONF_IMAP_PASSWORD])
         conn.select(opts.get(CONF_IMAP_MAILBOX, DEFAULT_MAILBOX), readonly=True)
         try:
             for sender in senders:
-                typ, data = conn.uid("SEARCH", None, f'(FROM "{sender}")')
+                criteria = f'(SINCE {since} FROM "{sender}")'
+                typ, data = conn.uid("SEARCH", None, criteria)
                 if typ != "OK" or not data or not data[0]:
                     continue
                 for uid in data[0].split():
